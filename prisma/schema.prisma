@@ -1,0 +1,89 @@
+// Prisma schema for the dish rating & recommendation app.
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum ReviewSource {
+  GOOGLE
+  YELP
+  OPENTABLE
+  TRIPADVISOR
+}
+
+enum SocialPlatform {
+  X
+  INSTAGRAM
+  TIKTOK
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  NEGATIVE
+}
+
+model Restaurant {
+  id        String   @id @default(cuid())
+  name      String
+  cuisine   String
+  city      String
+  address   String
+  priceTier Int // 1-4, like $ to $$$$
+  imageUrl  String
+  dishes    Dish[]
+  createdAt DateTime @default(now())
+}
+
+model Dish {
+  id           String          @id @default(cuid())
+  name         String
+  description  String
+  category     String // e.g. Appetizer, Entree, Dessert, Drink
+  price        Float
+  imageUrl     String
+  restaurant   Restaurant      @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  reviews      Review[]
+  mentions     SocialMention[]
+  createdAt    DateTime        @default(now())
+
+  @@index([restaurantId])
+}
+
+model Review {
+  id          String       @id @default(cuid())
+  dish        Dish         @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dishId      String
+  source      ReviewSource
+  authorName  String
+  rating      Int // 1-5
+  text        String
+  publishedAt DateTime
+
+  @@index([dishId])
+}
+
+model SocialMention {
+  id           String         @id @default(cuid())
+  dish         Dish           @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dishId       String
+  platform     SocialPlatform
+  authorHandle String
+  caption      String
+  url          String
+  likeCount    Int
+  commentCount Int
+  shareCount   Int // shares on X/IG, or share-equivalent (saves) on TikTok
+  viewCount    Int
+  sentiment    Sentiment
+  postedAt     DateTime
+
+  @@index([dishId])
+}
