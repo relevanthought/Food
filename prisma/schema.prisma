@@ -39,6 +39,31 @@ model Restaurant {
   imageUrl  String
   dishes    Dish[]
   createdAt DateTime @default(now())
+
+  // Real data from Google Places (Places API "New"), when this restaurant
+  // has been linked to a real place. Null for the seeded demo restaurants.
+  googlePlaceId         String?            @unique
+  googleMapsUri         String?
+  googleRating          Float?
+  googleUserRatingCount Int?
+  googleSyncedAt        DateTime?
+  googleReviews         RestaurantReview[]
+}
+
+// Real restaurant-level reviews pulled from Google Places. Kept separate
+// from `Review` (which is per-dish and, for now, entirely mock-generated —
+// Google/Yelp/etc. don't expose per-dish review data).
+model RestaurantReview {
+  id           String     @id @default(cuid())
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  restaurantId String
+  authorName   String
+  rating       Int
+  text         String
+  relativeTime String // Google's human-readable "2 months ago"
+  publishedAt  DateTime
+
+  @@index([restaurantId])
 }
 
 model Dish {

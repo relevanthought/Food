@@ -59,7 +59,10 @@ export async function getFilterOptions(): Promise<{ cuisines: string[]; cities: 
 export async function getRestaurant(id: string) {
   const restaurant = await db.restaurant.findUnique({
     where: { id },
-    include: { dishes: { include: dishInclude } },
+    include: {
+      dishes: { include: dishInclude },
+      googleReviews: { orderBy: { publishedAt: "desc" } },
+    },
   });
   if (!restaurant) return null;
 

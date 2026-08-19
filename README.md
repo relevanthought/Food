@@ -19,6 +19,9 @@ the same `Review` / `SocialMention` shapes real APIs would produce.
   name/cuisine/city at `/search?q=`
 - **Accounts** (email + password via NextAuth/Auth.js credentials) and
   **favorites** — save any dish with the ♡ and view them at `/favorites`
+- **Real restaurant data via Google Places** (opt-in, per restaurant) —
+  real rating, review count, and actual review text, shown in its own
+  section on the restaurant page. See [Real data](#real-data-google-places) below.
 
 ## Stack
 
@@ -70,11 +73,45 @@ cuisines/cities, ~4 dishes each, with varied review/buzz profiles (viral
 favorites, hidden gems, overhyped-but-mediocre dishes, quiet classics with
 no social presence, etc.) so the scoring differences are visible.
 
+## Real data: Google Places
+
+Google Places (the "New" Places API) can only give real **restaurant**-level
+data — rating, review count, real review text, price level. It has no menu
+endpoint, so it can't tell you what dishes a restaurant serves or how those
+specific dishes are reviewed. That gap is architectural, not a shortcut: to
+keep this honest, real Google data lives in its own `RestaurantReview` model
+and its own section on the restaurant page ("What Google reviewers say"),
+completely separate from the per-dish `Review`/scoring system, which stays
+mock-generated until a dish-level extraction pass exists (see below).
+
+To try it:
+
+1. Get a key at [console.cloud.google.com/apis/credentials](https://console.cloud.google.com/apis/credentials)
+   with **Places API (New)** enabled on the project, and set
+   `GOOGLE_PLACES_API_KEY` in `.env`.
+2. Preview a match with no DB writes:
+   ```bash
+   npm run google:lookup -- --query "Katz's Delicatessen, New York, NY"
+   ```
+3. Sync it onto one of our (fictional) seeded restaurants — note this will
+   usually find nothing or the wrong place, since the seed restaurants
+   aren't real; this is mainly useful once you're pointing it at a
+   restaurant that's actually in the catalog *because* it's real:
+   ```bash
+   npm run google:lookup -- --query "..." --restaurant-id <id>
+   ```
+
+This has been built and typechecked/linted/build-verified, but **not yet
+run against the live API** — it needs a real key, which wasn't provided in
+this session.
+
 ## Project structure
 
 ```
-prisma/schema.prisma        Restaurant / Dish / Review / SocialMention / User / Favorite models
+prisma/schema.prisma        Restaurant / Dish / Review / SocialMention / User / Favorite / RestaurantReview models
 prisma/seed.ts               Mock data generator
+scripts/google-places-sync.ts Google Places lookup/sync CLI
+src/lib/googlePlaces.ts       Places API (New) client
 src/auth.ts                  Auth.js config (Credentials provider, JWT sessions)
 src/lib/scoring.ts            The scoring engine
 src/lib/data.ts               Server-side data access (queries + score attach)
@@ -90,12 +127,15 @@ src/app/favorites             Saved dishes (requires login)
 
 ## Next steps toward real data
 
-- Google Places / Yelp Fusion have official APIs with free dev tiers and
-  are the most realistic near-term source for review data.
-- Dish-level extraction (matching a review's text to a specific menu item)
-  needs its own pass — e.g. an LLM classifier over review text — since
-  Google/Yelp reviews are per-restaurant, not per-dish.
-- Social buzz is the hardest to source legally: X/Instagram/TikTok don't
-  offer public APIs for this use case, so real integration likely means
-  either a licensed data partner (e.g. Nosto, Trendspottr-style vendors)
-  or manual curation, not scraping.
+- **Google Places is wired up** (see above) for real restaurant-level
+  rating/review data; Yelp Fusion would be the next source in the same
+  restaurant-level shape.
+- **Dish-level extraction** is the real gap: matching review text to a
+  specific menu item needs its own pass (e.g. an LLM classifier over
+  review text), since Google/Yelp reviews are per-restaurant, not
+  per-dish. Until that exists, per-dish scoring stays mock-generated even
+  for restaurants with real Google data attached.
+- **Social buzz** is the hardest to source legally: X/Instagram/TikTok
+  don't offer public APIs for this use case, so real integration likely
+  means either a licensed data partner (e.g. Nosto, Trendspottr-style
+  vendors) or manual curation, not scraping.
