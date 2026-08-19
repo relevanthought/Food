@@ -1,6 +1,14 @@
-import { getFilterOptions, getTopDishes } from "@/lib/data";
+import Link from "next/link";
+import { getFilterOptions, getTopDishes, getCategories } from "@/lib/data";
 import DishCard from "@/components/DishCard";
 import FilterBar from "@/components/FilterBar";
+
+const CATEGORY_EMOJI: Record<string, string> = {
+  Appetizer: "🥗",
+  Entree: "🍽️",
+  Dessert: "🍰",
+  Drink: "🥤",
+};
 
 export default async function HomePage({
   searchParams,
@@ -8,9 +16,10 @@ export default async function HomePage({
   searchParams: Promise<{ cuisine?: string; city?: string }>;
 }) {
   const params = await searchParams;
-  const [dishes, filterOptions] = await Promise.all([
+  const [dishes, filterOptions, categories] = await Promise.all([
     getTopDishes({ cuisine: params.cuisine, city: params.city }),
     getFilterOptions(),
+    getCategories(),
   ]);
 
   return (
@@ -21,6 +30,19 @@ export default async function HomePage({
           Ranked by a blend of critic reviews and social media buzz — see the full breakdown on
           any dish.
         </p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap gap-2">
+        {categories.map((category) => (
+          <Link
+            key={category}
+            href={`/category/${encodeURIComponent(category)}`}
+            className="flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm hover:border-accent hover:text-accent-dark"
+          >
+            <span>{CATEGORY_EMOJI[category] ?? "🍴"}</span>
+            {category}s
+          </Link>
+        ))}
       </div>
 
       <FilterBar cuisines={filterOptions.cuisines} cities={filterOptions.cities} />

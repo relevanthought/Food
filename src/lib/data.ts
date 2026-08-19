@@ -22,11 +22,13 @@ function withScore<T extends { reviews: Review[]; mentions: SocialMention[] }>(d
 export interface DishFilters {
   cuisine?: string;
   city?: string;
+  category?: string;
 }
 
 export async function getTopDishes(filters: DishFilters = {}, limit = 50): Promise<DishWithScore[]> {
   const dishes = await db.dish.findMany({
     where: {
+      ...(filters.category ? { category: filters.category } : {}),
       restaurant: {
         ...(filters.cuisine ? { cuisine: filters.cuisine } : {}),
         ...(filters.city ? { city: filters.city } : {}),
@@ -39,6 +41,11 @@ export async function getTopDishes(filters: DishFilters = {}, limit = 50): Promi
     .map(withScore)
     .sort((a, b) => b.score.overall - a.score.overall)
     .slice(0, limit);
+}
+
+export async function getCategories(): Promise<string[]> {
+  const dishes = await db.dish.findMany({ select: { category: true } });
+  return [...new Set(dishes.map((d) => d.category))].sort();
 }
 
 export async function getFilterOptions(): Promise<{ cuisines: string[]; cities: string[] }> {
@@ -64,6 +71,39 @@ export async function getDish(id: string): Promise<DishWithScore | null> {
   const dish = await db.dish.findUnique({ where: { id }, include: dishInclude });
   if (!dish) return null;
   return withScore(dish);
+}
+
+export async function searchDishes(query: string, limit = 30): Promise<DishWithScore[]> {
+  const q = query.trim();
+  if (!q) return [];
+
+  const dishes = await db.dish.findMany({
+    where: {
+      OR: [
+        { name: { contains: q } },
+        { description: { contains: q } },
+        { category: { contains: q } },
+        { restaurant: { name: { contains: q } } },
+        { restaurant: { cuisine: { contains: q } } },
+        { restaurant: { city: { contains: q } } },
+      ],
+    },
+    include: dishInclude,
+  });
+
+  return dishes
+    .map(withScore)
+    .sort((a, b) => b.score.overall - a.score.overall)
+    .slice(0, limit);
+}
+
+export async function getFavoriteDishes(userId: string): Promise<DishWithScore[]> {
+  const favorites = await db.favorite.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { dish: { include: dishInclude } },
+  });
+  return favorites.map((f) => withScore(f.dish));
 }
 
 export async function getAllDishIds(): Promise<string[]> {

@@ -4,6 +4,7 @@ import { getDish } from "@/lib/data";
 import { SOURCE_LABEL, PLATFORM_LABEL, PLATFORM_EMOJI, formatCompactNumber, formatRelativeDate } from "@/lib/format";
 import ScoreBadge from "@/components/ScoreBadge";
 import Stars from "@/components/Stars";
+import FavoriteButton from "@/components/FavoriteButton";
 
 const SENTIMENT_STYLE: Record<string, string> = {
   POSITIVE: "bg-emerald-100 text-emerald-700",
@@ -37,7 +38,10 @@ export default async function DishPage({ params }: { params: Promise<{ id: strin
             {dish.category} · ${dish.price.toFixed(2)}
           </p>
         </div>
-        <ScoreBadge score={score.overall} size="lg" />
+        <div className="flex flex-col items-end gap-2">
+          <FavoriteButton dishId={dish.id} />
+          <ScoreBadge score={score.overall} size="lg" />
+        </div>
       </div>
 
       {/* Score breakdown */}

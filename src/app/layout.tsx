@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import "./globals.css";
+import SearchBar from "@/components/SearchBar";
+import AuthNav from "@/components/AuthNav";
 
 export const metadata: Metadata = {
   title: "Forkcast — dish ratings & recommendations",
@@ -12,14 +15,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-sans">
         <header className="border-b border-border bg-card sticky top-0 z-10">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 flex items-center gap-4">
+            <Link href="/" className="flex items-center gap-2 shrink-0">
               <span className="text-2xl">🍽️</span>
               <span className="text-xl font-bold tracking-tight">Forkcast</span>
             </Link>
-            <p className="hidden sm:block text-sm text-muted">
-              Dish rankings from reviews &amp; social buzz
-            </p>
+            <Suspense fallback={<div className="flex-1 max-w-sm" />}>
+              <SearchBar />
+            </Suspense>
+            <nav className="ml-auto flex items-center gap-4 text-sm">
+              <AuthNav />
+            </nav>
           </div>
         </header>
         <main className="flex-1">{children}</main>

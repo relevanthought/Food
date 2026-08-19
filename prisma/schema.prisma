@@ -52,9 +52,31 @@ model Dish {
   restaurantId String
   reviews      Review[]
   mentions     SocialMention[]
+  favorites    Favorite[]
   createdAt    DateTime        @default(now())
 
   @@index([restaurantId])
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  name         String
+  passwordHash String
+  favorites    Favorite[]
+  createdAt    DateTime   @default(now())
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  dish      Dish     @relation(fields: [dishId], references: [id], onDelete: Cascade)
+  dishId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, dishId])
+  @@index([dishId])
 }
 
 model Review {

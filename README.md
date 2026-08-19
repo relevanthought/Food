@@ -11,10 +11,20 @@ public APIs for this use case). Swapping in real data sources later only
 touches the seed/ingestion layer; the scoring engine and UI already consume
 the same `Review` / `SocialMention` shapes real APIs would produce.
 
+## Features
+
+- **Ranked home feed**, filterable by cuisine/city, plus category chips
+  ("Best desserts", "Best entrees", …) at `/category/[category]`
+- **Search** across dish name/description/category and restaurant
+  name/cuisine/city at `/search?q=`
+- **Accounts** (email + password via NextAuth/Auth.js credentials) and
+  **favorites** — save any dish with the ♡ and view them at `/favorites`
+
 ## Stack
 
 - **Next.js 16** (App Router, Server Components) + TypeScript + Tailwind CSS
 - **Prisma 7** + SQLite (via the `better-sqlite3` driver adapter) for local data
+- **Auth.js (next-auth v5)** with a Credentials provider + JWT sessions
 
 ## How scoring works (`src/lib/scoring.ts`)
 
@@ -43,6 +53,10 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000).
 
+`.env` (gitignored) already has a generated `AUTH_SECRET` for local dev.
+For any real deployment, copy `.env.example` to `.env` and replace it with
+your own secret (e.g. `openssl rand -base64 32`).
+
 ### Database
 
 To wipe and reseed from scratch at any point:
@@ -59,13 +73,19 @@ no social presence, etc.) so the scoring differences are visible.
 ## Project structure
 
 ```
-prisma/schema.prisma      Restaurant / Dish / Review / SocialMention models
-prisma/seed.ts             Mock data generator
-src/lib/scoring.ts         The scoring engine
-src/lib/data.ts            Server-side data access (queries + score attach)
-src/app/page.tsx           Home — top dishes, filterable by cuisine/city
-src/app/restaurant/[id]    Restaurant detail — its dishes ranked
-src/app/dish/[id]          Dish detail — score breakdown, reviews, mentions
+prisma/schema.prisma        Restaurant / Dish / Review / SocialMention / User / Favorite models
+prisma/seed.ts               Mock data generator
+src/auth.ts                  Auth.js config (Credentials provider, JWT sessions)
+src/lib/scoring.ts            The scoring engine
+src/lib/data.ts               Server-side data access (queries + score attach)
+src/lib/actions/              Server actions (auth, favorites)
+src/app/page.tsx              Home — top dishes, filterable by cuisine/city
+src/app/category/[category]   Category browsing ("Best desserts", etc.)
+src/app/search                Search results
+src/app/restaurant/[id]       Restaurant detail — its dishes ranked
+src/app/dish/[id]             Dish detail — score breakdown, reviews, mentions
+src/app/login, /signup        Auth pages
+src/app/favorites             Saved dishes (requires login)
 ```
 
 ## Next steps toward real data
