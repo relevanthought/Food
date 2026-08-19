@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: forkcast
+      POSTGRES_PASSWORD: forkcast_dev_password
+      POSTGRES_DB: forkcast
+    ports:
+      - "5432:5432"
+    volumes:
+      - forkcast-db:/var/lib/postgresql/data
+
+volumes:
+  forkcast-db:
